@@ -17,7 +17,7 @@ header{background:var(--s1);border-bottom:2px solid var(--or);padding:0 20px;dis
 .tabs{background:var(--s1);border-bottom:1px solid var(--bd);display:flex;padding:0 20px;overflow-x:auto;position:sticky;top:54px;z-index:99;}
 .tab{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:.9rem;letter-spacing:.5px;text-transform:uppercase;padding:13px 18px;border:none;background:none;color:var(--tm);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:color .15s;}
 .tab:hover{color:var(--tx);}.tab.active{color:var(--or);border-bottom-color:var(--or);}
-main{padding:24px 20px;max-width:920px;margin:0 auto;}
+main{padding:24px 20px;max-width:1200px;margin:0 auto;}
 .tc{display:none;}.tc.active{display:block;}
 .sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;}
 .sh-btns{display:flex;gap:8px;}
@@ -126,6 +126,7 @@ tr.drag-over-row td{border-top:2px solid var(--or);}
   .lager-col-hdr{display:none!important;}
   .sg{grid-template-columns:1fr 1fr;}
   .ev-3col{grid-template-columns:1fr!important;}
+  .ev-verkauf-grid{grid-template-columns:1fr!important;}
 }
 @media(max-width:900px) and (min-width:601px){
   .ev-3col{grid-template-columns:1fr 1fr!important;}
@@ -275,13 +276,14 @@ input[type=number]{-moz-appearance:textfield;}
         </div>
       </div>
       <!-- Zutaten & Lager -->
-      <div class="rc">
-        <div class="rch"><div class="rn" style="font-size:1rem">🥩 Benötigte Zutaten</div></div>
+      <div class="rc" style="max-height:400px;overflow-y:auto">
+        <div class="rch" style="position:sticky;top:0;z-index:1;background:var(--s2)"><div class="rn" style="font-size:1rem">🥩 Benötigte Zutaten</div></div>
         <div class="rcb" id="ev_zutaten">
           <div style="color:var(--td);font-size:.82rem;font-style:italic">Stückzahlen unten eingeben…</div>
         </div>
       </div>
     </div>
+    <div id="ev_zutaten_panel" style="display:none"></div>
     <!-- Geplante Verkäufe -->
     <div class="rc">
       <div class="rch">
@@ -630,6 +632,8 @@ function sw(t){
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['z','r','p','m','e','k','l','t','s'][i]===t));
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('active'));
   document.getElementById('t'+t).classList.add('active');
+  const zp=document.getElementById('ev_zutaten_panel');
+  if(zp&&t!=='e')zp.style.display='none';
   if(t==='s')renderS();
   if(t==='m')renderM();
   if(t==='e')renderE();
