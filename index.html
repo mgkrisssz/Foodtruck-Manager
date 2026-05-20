@@ -196,6 +196,7 @@ input[type=number]{-moz-appearance:textfield;}
   <button class="tab" onclick="sw('l')">📦 Lager</button>
   <button class="tab" onclick="sw('t')">📅 Tagesabschluss</button>
   <button class="tab" onclick="sw('s')">📊 Statistiken</button>
+  <button class="tab" onclick="sw('au')">💰 Ausgaben</button>
 </div>
 <main>
   <div id="tz" class="tc active">
@@ -403,6 +404,18 @@ input[type=number]{-moz-appearance:textfield;}
     <div class="sg" id="sovw"></div>
     <div id="srez"></div>
   </div>
+
+  <!-- AUSGABEN -->
+  <div id="tau" class="tc">
+    <div class="sh">
+      <div class="st">💰 Ausgaben</div>
+      <button class="btn bp" onclick="openAU()">+ Neue Ausgabe</button>
+    </div>
+    <div id="au_nav" style="display:flex;align-items:center;gap:12px;margin-bottom:20px"></div>
+    <div class="sg" id="au_ovw" style="margin-bottom:16px"></div>
+    <div id="au_vst_bar" style="margin-bottom:18px"></div>
+    <div id="au_list"></div>
+  </div>
 </main>
 
 <!-- MODAL ZUTAT -->
@@ -535,11 +548,64 @@ input[type=number]{-moz-appearance:textfield;}
   </div>
 </div>
 
+<!-- MODAL AUSGABE -->
+<div class="mo" id="mau">
+  <div class="md md-wide">
+    <div class="mt" id="maut">Neue Ausgabe</div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Datum *</label><input class="fc" id="au_dat" type="date"></div>
+      <div class="fg"><label class="fl">Kategorie *</label>
+        <select class="fc" id="au_kat" onchange="upAUHinweis(true)">
+          <option value="fahrzeug">🚗 Fahrzeug</option>
+          <option value="versicherung">🛡️ Versicherungen</option>
+          <option value="behoerden">📋 Behörden &amp; Lizenzen</option>
+          <option value="personal">👥 Personal</option>
+          <option value="marketing">📣 Marketing</option>
+          <option value="ausstattung">🔧 Ausstattung &amp; Geräte</option>
+          <option value="verwaltung">📊 Verwaltung &amp; Buchhaltung</option>
+          <option value="sonstiges">📦 Sonstiges</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Bezeichnung *</label><input class="fc" id="au_bez" placeholder="z.B. Haftpflichtversicherung Jänner"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Brutto-Betrag (€) *</label><input class="fc" id="au_brutto" type="number" step="0.01" min="0" placeholder="0,00" oninput="upAUHinweis()"></div>
+      <div class="fg"><label class="fl">USt-Satz</label>
+        <select class="fc" id="au_ust" onchange="upAUHinweis()">
+          <option value="0">0% – steuerbefreit (z.B. Versicherung)</option>
+          <option value="10">10% – ermäßigt (Lebensmittel etc.)</option>
+          <option value="20" selected>20% – Normalsteuersatz</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:var(--tx)">
+        <input type="checkbox" id="au_kein_vst" onchange="upAUHinweis()" style="accent-color:var(--rd);width:15px;height:15px;cursor:pointer">
+        <span>Kein Vorsteuerabzug (z.B. PKW-Benzin, Versicherung)</span>
+      </label>
+    </div>
+    <div id="au_hint" style="font-size:.78rem;color:var(--yl);margin-bottom:8px;padding:8px 11px;background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:4px;display:none"></div>
+    <div id="au_calc" class="finfo" style="margin-bottom:12px;min-height:20px"></div>
+    <div class="fg"><label class="fl">Intervall</label>
+      <select class="fc" id="au_intervall">
+        <option value="einmalig">Einmalig (Sonderausgabe)</option>
+        <option value="monatlich">Monatlich 🔁</option>
+        <option value="quartalsweise">Quartalsweise 🔁</option>
+        <option value="jaehrlich">Jährlich 🔁</option>
+      </select>
+      <div class="fhint">Wiederkehrende Ausgaben erscheinen automatisch in den jeweiligen Monaten.</div>
+    </div>
+    <div class="fg"><label class="fl">Notiz (optional)</label><input class="fc" id="au_notiz" placeholder="z.B. Rechnung Nr. 2026-01"></div>
+    <div class="mf"><button class="btn bs" onclick="closeMo('mau')">Abbrechen</button><button class="btn bp" onclick="saveAU()">Speichern</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
-let S={zutaten:[],rezepte:[],planung:{},gruppen:[],menus:[],lager:{},lager_min:{},verkaufe:[]};
-let eZ=null,eR=null,eG=null;
+let S={zutaten:[],rezepte:[],planung:{},gruppen:[],menus:[],lager:{},lager_min:{},verkaufe:[],ausgaben:[]};
+let eZ=null,eR=null,eG=null,eAU=null;
 let dragId=null;
+let auMonat=new Date().toISOString().substr(0,7);
 
 const GCOLS=['#E8620A','#2A8C2A','#1A7AB5','#9B3DAA','#C49B0A','#CC3333','#0A8C8C','#888880'];
 
@@ -601,6 +667,7 @@ function init(){
     if(!S.lager)S.lager={};
     if(!S.lager_min)S.lager_min={};
     if(!S.verkaufe)S.verkaufe=[];
+    if(!S.ausgaben)S.ausgaben=[];
     S.zutaten.forEach(z=>{if(z.g===undefined)z.g=null;});
   } else {
     S=JSON.parse(JSON.stringify(DEF));
@@ -608,7 +675,7 @@ function init(){
   renderAll();
 }
 function save(){localStorage.setItem('ft2',JSON.stringify(S));}
-function renderAll(){renderZ();renderR();renderP();renderM();renderE();renderK();renderL();renderTA();renderS();}
+function renderAll(){renderZ();renderR();renderP();renderM();renderE();renderK();renderL();renderTA();renderS();renderA();}
 function uid(){return Math.random().toString(36).substr(2,9);}
 function fmt(n){return(Math.round(n*100)/100).toFixed(2).replace('.',',')+' €';}
 function fmtN(n,d=3){return(Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toFixed(d).replace('.',',');}
@@ -629,7 +696,7 @@ function marge(r){
 function mCol(m){return m>=60?'var(--grl)':m>=40?'var(--yl)':'var(--rd)';}
 
 function sw(t){
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['z','r','p','m','e','k','l','t','s'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['z','r','p','m','e','k','l','t','s','au'][i]===t));
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('active'));
   document.getElementById('t'+t).classList.add('active');
   const zp=document.getElementById('ev_zutaten_panel');
@@ -640,6 +707,7 @@ function sw(t){
   if(t==='k')renderK();
   if(t==='l')renderL();
   if(t==='t')renderTA();
+  if(t==='au')renderA();
 }
 function toast(msg){
   const el=document.getElementById('toast');
@@ -1974,6 +2042,7 @@ function importData(e){
       if(!S.lager)S.lager={};
       if(!S.lager_min)S.lager_min={};
       if(!S.verkaufe)S.verkaufe=[];
+      if(!S.ausgaben)S.ausgaben=[];
       if(!S.planung)S.planung={};
       S.zutaten.forEach(z=>{if(z.g===undefined)z.g=null;});
       save();renderAll();toast('✓ Daten importiert');
@@ -1981,6 +2050,227 @@ function importData(e){
   };
   rd.readAsText(f);
 }
+// ── AUSGABEN ──────────────────────────────────
+const AUSG_KATS=[
+  {id:'fahrzeug',n:'Fahrzeug',icon:'🚗',c:'#1A7AB5'},
+  {id:'versicherung',n:'Versicherungen',icon:'🛡️',c:'#9B3DAA'},
+  {id:'behoerden',n:'Behörden & Lizenzen',icon:'📋',c:'#C49B0A'},
+  {id:'personal',n:'Personal',icon:'👥',c:'#E8620A'},
+  {id:'marketing',n:'Marketing',icon:'📣',c:'#0A8C8C'},
+  {id:'ausstattung',n:'Ausstattung & Geräte',icon:'🔧',c:'#2A8C2A'},
+  {id:'verwaltung',n:'Verwaltung & Buchhaltung',icon:'📊',c:'#CC3333'},
+  {id:'sonstiges',n:'Sonstiges',icon:'📦',c:'#888880'},
+];
+
+function prevMonat(m){const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo-2,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function nextMonat(m){const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+function ausgabenFuerMonat(monat){
+  const[y,m]=monat.split('-').map(Number);
+  return(S.ausgaben||[]).filter(a=>{
+    const[ay,am]=a.dat.split('-').map(Number);
+    switch(a.intervall){
+      case'monatlich':return ay<y||(ay===y&&am<=m);
+      case'quartalsweise':{const diff=(y-ay)*12+(m-am);return diff>=0&&diff%3===0;}
+      case'jaehrlich':return am===m&&ay<=y;
+      default:return ay===y&&am===m;
+    }
+  });
+}
+
+function calcVst(brutto,ust,keinVst){
+  const netto=ust>0?brutto/(1+ust/100):brutto;
+  const vst=(ust>0&&!keinVst)?brutto-netto:0;
+  return{netto,vst};
+}
+
+function ivBadge(iv){
+  const map={einmalig:'Einmalig',monatlich:'Monatlich 🔁',quartalsweise:'Quartalsweise 🔁',jaehrlich:'Jährlich 🔁'};
+  const col={einmalig:'var(--td)',monatlich:'var(--or)',quartalsweise:'var(--yl)',jaehrlich:'#1A7AB5'};
+  return`<span style="font-size:.72rem;color:${col[iv]||'var(--td)'};font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.3px">${map[iv]||iv}</span>`;
+}
+
+function renderA(){
+  const navEl=document.getElementById('au_nav');
+  const ovwEl=document.getElementById('au_ovw');
+  const vstEl=document.getElementById('au_vst_bar');
+  const listEl=document.getElementById('au_list');
+  if(!navEl)return;
+
+  const aus=ausgabenFuerMonat(auMonat);
+  let totalBrutto=0,totalNetto=0,totalVst=0;
+  aus.forEach(a=>{const{netto,vst}=calcVst(a.brutto,a.ust,a.kein_vst);totalBrutto+=a.brutto;totalNetto+=netto;totalVst+=vst;});
+
+  // Einnahmen aus Tagesabschluss für diesen Monat
+  const einnahmen=(S.verkaufe||[]).filter(v=>v.date&&v.date.substr(0,7)===auMonat)
+    .reduce((s,v)=>s+v.items.reduce((t,o)=>t+o.qty*o.vk,0),0);
+  const ergebnis=einnahmen-totalBrutto;
+
+  const monthLabel=new Date(auMonat+'-15').toLocaleDateString('de-AT',{month:'long',year:'numeric'});
+  const prevM=prevMonat(auMonat),nextM=nextMonat(auMonat);
+
+  // Nav
+  navEl.innerHTML=`
+    <button class="btn bs bsm" onclick="auMonat='${prevM}';renderA()">◀ ${new Date(prevM+'-15').toLocaleDateString('de-AT',{month:'short'})}</button>
+    <span style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:1.15rem;text-transform:uppercase;letter-spacing:1px;min-width:180px;text-align:center;color:var(--or)">${monthLabel}</span>
+    <button class="btn bs bsm" onclick="auMonat='${nextM}';renderA()">▶ ${new Date(nextM+'-15').toLocaleDateString('de-AT',{month:'short'})}</button>`;
+
+  // Overview cards
+  ovwEl.innerHTML=[
+    {l:'Ausgaben gesamt',v:fmt(totalBrutto),c:'var(--rd)'},
+    {l:'Netto',v:fmt(totalNetto),c:'var(--or)'},
+    {l:'Vorsteuer (VSt)',v:fmt(totalVst),c:'var(--yl)'},
+    {l:'Einnahmen (Kasse)',v:fmt(einnahmen),c:'var(--grl)'},
+    {l:'Ergebnis',v:fmt(ergebnis),c:ergebnis>=0?'var(--grl)':'var(--rd)'},
+  ].map(o=>`<div class="sc" style="${o.l==='Ergebnis'?'border:1px solid '+(ergebnis>=0?'var(--gr)':'var(--rd)'):''}">
+    <div class="scl">${o.l}</div>
+    <div class="scv" style="color:${o.c};font-size:${String(o.v).length>9?'1.05rem':'1.4rem'}">${o.v}</div>
+  </div>`).join('');
+
+  // VSt Hinweis
+  vstEl.innerHTML=totalVst>0
+    ?`<div style="background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:6px;padding:10px 14px;font-size:.83rem;color:var(--tm)">
+      💡 <strong style="color:var(--yl)">Vorsteuer ${fmt(totalVst)}</strong> für ${monthLabel} → bei der nächsten UVA-Meldung ans Finanzamt geltend machen.
+      <span style="color:var(--td);font-size:.75rem;margin-left:8px">(Nur bei USt-pflichtigen Ausgaben mit ordnungsgemäßer Rechnung)</span>
+    </div>`
+    :'';
+
+  // Grouped list
+  let h='';
+  for(const kat of AUSG_KATS){
+    const items=aus.filter(a=>a.kat===kat.id);
+    if(!items.length)continue;
+    const katTotal=items.reduce((s,a)=>s+a.brutto,0);
+    const katVst=items.reduce((s,a)=>s+calcVst(a.brutto,a.ust,a.kein_vst).vst,0);
+    h+=`<div class="rc" style="margin-bottom:14px">
+      <div class="rch">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${kat.c};flex-shrink:0"></span>
+          <span style="font-size:1.1rem">${kat.icon}</span>
+          <div class="rn" style="font-size:.95rem">${kat.n}</div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center">
+          ${katVst>0?`<span style="font-size:.78rem;color:var(--yl)">VSt: ${fmt(katVst)}</span>`:''}
+          <span class="pr pr-o">${fmt(katTotal)}</span>
+        </div>
+      </div>
+      <table class="dt">
+        <thead><tr><th>Datum</th><th>Bezeichnung</th><th>Intervall</th><th>Brutto</th><th>USt</th><th>Vorsteuer</th><th></th></tr></thead>
+        <tbody>`;
+    for(const a of items){
+      const{netto,vst}=calcVst(a.brutto,a.ust,a.kein_vst);
+      h+=`<tr>
+        <td style="color:var(--tm);font-size:.82rem;white-space:nowrap">${a.dat}</td>
+        <td><strong style="font-size:.88rem">${a.bez}</strong>${a.notiz?`<br><span style="font-size:.73rem;color:var(--td)">${a.notiz}</span>`:''}</td>
+        <td>${ivBadge(a.intervall)}</td>
+        <td><span class="pr pr-o">${fmt(a.brutto)}</span></td>
+        <td style="font-size:.8rem;color:var(--tm)">${a.ust}%</td>
+        <td>${a.kein_vst||a.ust===0
+          ?`<span style="font-size:.73rem;color:var(--rd)">✗ kein VSt</span>`
+          :`<span class="pr" style="color:var(--grl);font-size:.82rem">+${fmt(vst)}</span>`}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <button class="btn bs bsm" onclick="openAU('${a.id}')">✏️</button>
+          <button class="btn bd-btn bsm" onclick="delAU('${a.id}')">🗑</button>
+        </td>
+      </tr>`;
+    }
+    h+=`</tbody></table></div>`;
+  }
+
+  if(!aus.length){
+    h=`<div class="empty"><div class="empty-i">💰</div><div class="empty-t">Keine Ausgaben für ${monthLabel}</div></div>`;
+  }
+
+  // Einnahmen Block
+  h+=`<div class="rc" style="margin-top:6px;opacity:.7">
+    <div class="rch">
+      <div class="rn" style="font-size:.9rem">📥 Einnahmen aus Kasse</div>
+      <span class="pr pr-g">${fmt(einnahmen)}</span>
+    </div>
+    <div style="padding:9px 16px;font-size:.82rem;color:var(--tm)">${einnahmen>0?`Kasseneinnahmen für ${monthLabel} (automatisch aus Tagesabschluss)`:
+    `Noch keine Kasseneinnahmen für ${monthLabel} erfasst.`}</div>
+  </div>`;
+
+  listEl.innerHTML=h;
+}
+
+function openAU(id=null){
+  eAU=id;
+  const a=id?(S.ausgaben||[]).find(x=>x.id===id):null;
+  document.getElementById('maut').textContent=id?'Ausgabe bearbeiten':'Neue Ausgabe';
+  document.getElementById('au_dat').value=a?.dat||new Date().toISOString().split('T')[0];
+  document.getElementById('au_kat').value=a?.kat||'fahrzeug';
+  document.getElementById('au_bez').value=a?.bez||'';
+  document.getElementById('au_brutto').value=a?.brutto||'';
+  document.getElementById('au_ust').value=a?.ust!==undefined?a.ust:20;
+  document.getElementById('au_kein_vst').checked=a?.kein_vst||false;
+  document.getElementById('au_intervall').value=a?.intervall||'einmalig';
+  document.getElementById('au_notiz').value=a?.notiz||'';
+  upAUHinweis(false);
+  document.getElementById('mau').classList.add('open');
+  setTimeout(()=>document.getElementById('au_bez').focus(),100);
+}
+
+const AU_KAT_DEFAULTS={
+  fahrzeug:    {ust:20, kein_vst:true,  hint:'⚠ PKW/Kombi: Treibstoff, Wartung, Leasing → kein Vorsteuerabzug (§12 UStG). Ausnahme: E-Fahrzeug oder Kastenwagen/LKW → Haken entfernen.'},
+  versicherung:{ust:0,  kein_vst:true,  hint:'⚠ Versicherungen sind USt-befreit (0%) → kein Vorsteuerabzug.'},
+  behoerden:   {ust:0,  kein_vst:true,  hint:'⚠ Behördengebühren & Genehmigungen sind i.d.R. USt-befreit → kein Vorsteuerabzug.'},
+  personal:    {ust:0,  kein_vst:true,  hint:'⚠ Löhne & Gehälter unterliegen keiner USt → kein Vorsteuerabzug.'},
+  marketing:   {ust:20, kein_vst:false, hint:''},
+  ausstattung: {ust:20, kein_vst:false, hint:''},
+  verwaltung:  {ust:20, kein_vst:false, hint:''},
+  sonstiges:   {ust:20, kein_vst:false, hint:''},
+};
+
+function upAUHinweis(katChanged=false){
+  const kat=document.getElementById('au_kat').value;
+  const ustEl=document.getElementById('au_ust');
+  const keinVstEl=document.getElementById('au_kein_vst');
+  const hintEl=document.getElementById('au_hint');
+  const calcEl=document.getElementById('au_calc');
+  const brutto=parseFloat(document.getElementById('au_brutto').value)||0;
+  // Auto-set USt + kein_vst when category changes
+  const def=AU_KAT_DEFAULTS[kat];
+  if(def&&katChanged){ustEl.value=def.ust;keinVstEl.checked=def.kein_vst;}
+  if(hintEl&&def){hintEl.textContent=def.hint;hintEl.style.display=def.hint?'block':'none';}
+  // Berechnung
+  const ustNow=parseInt(ustEl.value)||0;
+  const keinVstNow=keinVstEl.checked;
+  if(brutto>0&&ustNow>0){
+    const netto=brutto/(1+ustNow/100);
+    const vst=keinVstNow?0:brutto-netto;
+    if(calcEl)calcEl.innerHTML=`Netto: <strong>${fmt(netto)}</strong> &nbsp;·&nbsp; Vorsteuer: <strong style="color:${keinVstNow?'var(--rd)':'var(--grl)'}">${keinVstNow?'✗ 0,00 €':fmt(vst)}</strong>`;
+  } else if(brutto>0){
+    if(calcEl)calcEl.innerHTML=`Netto: <strong>${fmt(brutto)}</strong> &nbsp;·&nbsp; <span style="color:var(--td);font-size:.8rem">USt-befreit</span>`;
+  } else {
+    if(calcEl)calcEl.innerHTML='';
+  }
+}
+
+function saveAU(){
+  const dat=document.getElementById('au_dat').value;
+  const kat=document.getElementById('au_kat').value;
+  const bez=document.getElementById('au_bez').value.trim();
+  const brutto=parseFloat(document.getElementById('au_brutto').value);
+  const ust=parseInt(document.getElementById('au_ust').value)||0;
+  const kein_vst=document.getElementById('au_kein_vst').checked;
+  const intervall=document.getElementById('au_intervall').value;
+  const notiz=document.getElementById('au_notiz').value.trim();
+  if(!dat||!bez||isNaN(brutto)||brutto<=0){alert('Bitte Datum, Bezeichnung und Betrag eingeben.');return;}
+  if(!S.ausgaben)S.ausgaben=[];
+  const obj={id:eAU||uid(),dat,kat,bez,brutto,ust,kein_vst,intervall,notiz};
+  if(eAU){const i=S.ausgaben.findIndex(a=>a.id===eAU);if(i>=0)S.ausgaben[i]=obj;else S.ausgaben.push(obj);}
+  else{S.ausgaben.push(obj);}
+  save();renderA();closeMo('mau');
+  toast(eAU?'✓ Ausgabe aktualisiert':'✓ Ausgabe gespeichert');
+}
+
+function delAU(id){
+  if(!confirm('Ausgabe wirklich löschen?'))return;
+  S.ausgaben=(S.ausgaben||[]).filter(a=>a.id!==id);
+  save();renderA();toast('✓ Ausgabe gelöscht');
+}
+
 init();
 </script>
 </body>
