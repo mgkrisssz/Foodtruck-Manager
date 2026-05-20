@@ -551,7 +551,32 @@ input[type=number]{-moz-appearance:textfield;}
 <!-- MODAL AUSGABE -->
 <div class="mo" id="mau">
   <div class="md md-wide">
-    <div class="mt" id="maut">Neue Ausgabe</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div class="mt" style="margin-bottom:0" id="maut">Neue Ausgabe</div>
+      <button onclick="toggleAUInfo()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tm);border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:.85rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s" title="Steuerinfos anzeigen" onmouseover="this.style.borderColor='var(--or)';this.style.color='var(--or)'" onmouseout="this.style.borderColor='var(--bd)';this.style.color='var(--tm)'">ℹ</button>
+    </div>
+    <div id="au_info_panel" style="display:none;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:12px 14px;margin-bottom:14px;font-size:.8rem">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--or);margin-bottom:10px">🇦🇹 Steuerinfos Österreich</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;padding:4px 8px;font-size:.7rem;color:var(--tm);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;border-bottom:1px solid var(--bd)">Kategorie</th>
+          <th style="text-align:center;padding:4px 8px;font-size:.7rem;color:var(--tm);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;border-bottom:1px solid var(--bd)">USt</th>
+          <th style="text-align:left;padding:4px 8px;font-size:.7rem;color:var(--tm);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;border-bottom:1px solid var(--bd)">Vorsteuer</th>
+        </tr></thead>
+      <tbody>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">🚗 Fahrzeug (PKW/Kombi)</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">20%</td><td style="padding:5px 8px;color:var(--rd)">❌ Nein – gesetzl. ausgeschlossen</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">🚗 Fahrzeug (E-Auto/LKW)</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">20%</td><td style="padding:5px 8px;color:var(--grl)">✅ Ja – abziehbar</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">🛡️ Versicherungen</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">0%</td><td style="padding:5px 8px;color:var(--rd)">❌ Nein – USt-befreit</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">📋 Behörden &amp; Lizenzen</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">0%</td><td style="padding:5px 8px;color:var(--rd)">❌ Nein – USt-befreit</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">👥 Personal (Löhne)</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">0%</td><td style="padding:5px 8px;color:var(--rd)">❌ Nein – keine USt</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">📣 Marketing</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">20%</td><td style="padding:5px 8px;color:var(--grl)">✅ Ja – abziehbar</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">🔧 Ausstattung &amp; Geräte</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">20%</td><td style="padding:5px 8px;color:var(--grl)">✅ Ja – abziehbar</td></tr>
+          <tr style="border-bottom:1px solid #1E1E1E"><td style="padding:5px 8px;color:var(--tx)">📊 Verwaltung / Steuerberater</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">20%</td><td style="padding:5px 8px;color:var(--grl)">✅ Ja – abziehbar</td></tr>
+          <tr><td style="padding:5px 8px;color:var(--tx)">📦 Sonstiges</td><td style="padding:5px 8px;text-align:center;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--tm)">20%</td><td style="padding:5px 8px;color:var(--yl)">✅ Ja – im Zweifel prüfen</td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);color:var(--td);font-size:.73rem">⚠ Kein Steuerrecht – nur Orientierung. Im Zweifel Steuerberater fragen.</div>
+    </div>
     <div class="fr">
       <div class="fg"><label class="fl">Datum *</label><input class="fc" id="au_dat" type="date"></div>
       <div class="fg"><label class="fl">Kategorie *</label>
@@ -2206,7 +2231,8 @@ function openAU(id=null){
   document.getElementById('au_kein_vst').checked=a?.kein_vst||false;
   document.getElementById('au_intervall').value=a?.intervall||'einmalig';
   document.getElementById('au_notiz').value=a?.notiz||'';
-  upAUHinweis(false);
+  upAUHinweis(!id); // auto-set defaults only for new entries
+  const ip=document.getElementById('au_info_panel');if(ip)ip.style.display='none';
   document.getElementById('mau').classList.add('open');
   setTimeout(()=>document.getElementById('au_bez').focus(),100);
 }
@@ -2245,6 +2271,11 @@ function upAUHinweis(katChanged=false){
   } else {
     if(calcEl)calcEl.innerHTML='';
   }
+}
+
+function toggleAUInfo(){
+  const el=document.getElementById('au_info_panel');
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 
 function saveAU(){
